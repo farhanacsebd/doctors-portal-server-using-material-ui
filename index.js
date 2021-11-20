@@ -6,12 +6,14 @@ require('dotenv').config();
 const { MongoClient } = require('mongodb');
 
 const port = process.env.PORT || 5000;
+const firebase = require("./doctors-portal-metarial-ui-firebase-adminsdk-bephu-f82389a970.json")
 
-const serviceAccount = require('./doctors-portal-metarial-firebase-adminsdk.json');
+const serviceAccount = JSON.parse(JSON.stringify(firebase));
+console.log(serviceAccount)
 
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-});
+// admin.initializeApp({
+//     credential: admin.credential.cert(serviceAccount)
+// });
 
 app.use(cors());
 app.use(express.json());
@@ -19,20 +21,21 @@ app.use(express.json());
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.cu5az.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
-async function verifyToken(req, res, next) {
-    if (req.headers?.authorization?.startsWith('Bearer ')) {
-        const token = req.headers.authorization.split(' ')[1];
+// async function verifyToken(req, res, next) {
+//     if (req.headers?.authorization?.startsWith('Bearer ')) {
+//         const token = req.headers.authorization.split(' ')[1];
 
-        try {
-            const decoderdUser = await admin.auth().verifyIdToken(token);
-            req.decoderdEmail = decoderdUser.email;
-        }
-        catch {
+//         try {
+//             const decodedUser = await admin.auth().verifyIdToken(token);
+//             req.decodedEmail = decodedUser.email;
+//         }
+//         catch {
 
-        }
-    }
-    next();
-}
+//         }
+
+//     }
+//     next();
+// }
 
 async function run() {
     try {
@@ -42,7 +45,7 @@ async function run() {
         const usersCollection = database.collection('users');
 
 
-        app.get('/appointments', verifyToken, async (req, res) => {
+        app.get('/appointments', async (req, res) => {
             const email = req.query.email;
             const date = new Date(req.query.date).toLocaleDateString();
             console.log(date)
@@ -62,6 +65,7 @@ async function run() {
 
         app.get('/users/:email', async (req, res) => {
             const email = req.params.email;
+            console.log(email);
             const query = { email: email };
             const user = await usersCollection.findOne(query);
             let isAdmin = false;
@@ -91,7 +95,7 @@ async function run() {
         })
 
 
-        app.put('/users/admin', verifyToken, async (req, res) => {
+        app.put('/users/admin', async (req, res) => {
             const user = req.body;
             const requester = req.decoderdEmail;
             if (requester) {
